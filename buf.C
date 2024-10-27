@@ -76,11 +76,19 @@ const Status BufMgr::allocBuf(int & frame)
 	
 const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
 {
+    int frameNo = 0;
+    Status status = hashTable->lookup(file, PageNo, frameNo);
 
-
-
-
-
+    if (status == OK) {
+        bufTable[frameNo].refbit = true;
+        bufTable[frameNo].pinCnt += 1;
+    } else {
+        int frameNo = allocBuf();
+        file->readPage(PageNo, *(file + PageNo));
+        hashTable->insert(file, PageNo, frameNo);
+        bufTable[frameNo].Set(file, PageNo);
+    }
+    return &bufTable[frameNo]
 }
 
 
