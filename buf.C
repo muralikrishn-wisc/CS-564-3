@@ -82,14 +82,23 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
         BufDesc *frame = &bufTable[frameNo];
         frame->refbit = true;
         frame->pinCnt += 1;
-        return frame
+        return frame;
     } else {
         int frameNo = allocBuf();
         BufDesc *frame = &bufTable[frameNo];
-        file->readPage(PageNo, *(file + PageNo));
-        hashTable->insert(file, PageNo, frameNo);
-        frame->Set(file, PageNo);
-        return frame
+        Status readPageStatus = file->readPage(PageNo, *(file + PageNo));
+        if (readPageStatus == UNIXERR) {
+            return UNIXERR;
+        }
+        Status hashTableStatus = hashTable->insert(file, PageNo, frameNo);
+        if (hashTableStatus == HASHTBLERROR) {
+            return HASHTBLERROR;
+        }
+        Status setStatus = frame->Set(file, PageNo);
+        if (setStatus == BUFFEREXCEEDED) {
+            return BUFFEREXCEEDED;
+        }
+        return frame;
     }
 }
 
