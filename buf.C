@@ -65,8 +65,7 @@ BufMgr::~BufMgr() {
 
 const Status BufMgr::allocBuf(int & frame) 
 {
-
-
+    
 
 
 
@@ -96,11 +95,30 @@ const Status BufMgr::unPinPage(File* file, const int PageNo,
 
 const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page) 
 {
+    advanceClock(); //Advance clock pointer
+    BufDesc* tmpbuf = &bufTable[clockHand];
+    if(tmpbuf->valid == true){ //Valid set? yes
+        if(tmpbuf->refbit == true){//refBit set? yes
+            tmpbuf->refbit = false; //Is this right way to change the var?
+        }
+        else{//refBit set? no
+            if(tmpbuf->pinCnt == 0){//page pinned? no
+                if(tmpbuf->dirty == true){//dirty bit set? yes
 
+                }
+                else{//dirty bit set? no
 
+                }
+            }
+            else{//page pinned? yes
 
+            }
 
-
+        }
+    }
+    else{ //Valid set? no
+        //invoke set() on frame
+    }
 
 
 }
