@@ -74,26 +74,26 @@ const Status BufMgr::allocBuf(int & frame)
         if(frame->valid == true){ //Valid set? yes
             if(frame->refbit == true){//refBit set? yes
                 frame->refbit = false; //Is this right way to change the var?
-                continue
+                continue;
             }
             else{//refBit set? no
                 if(frame->pinCnt == 0){//page pinned? no
                     if(frame->dirty == true){//dirty bit set? yes
-                        frame->file->writePage();
-                    }
-                    else{//dirty bit set? no
-                        Status status = frame->Set(frame->file, frame->pageNo);
+                        Status status = frame->file->writePage(frame->pageNo, hashTable->lookup(frame->file, frame->pageNo, frame->frameNo));
                         if(status != OK){
                             return UNIXERR;
                         }
+                    }
+                    else{//dirty bit set? no
+                        frame->Set(frame->file, frame->pageNo);
                         set = true;
                     }
                 }
                 else{//page pinned? yes
-                    if(clockhand == firstFrame){
+                    if(clockHand == firstFrame){
                         return BUFFEREXCEEDED;
                     }
-                    continue
+                    continue;
                 } 
 
             }
@@ -120,11 +120,15 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
         BufDesc *frame = &bufTable[frameNo];
         frame->refbit = true;
         frame->pinCnt += 1;
-        return frame;
+        page = frame;
     } else {
-        int frameNo = allocBuf();
+        int frameNo = 0;
+        Status allocStatus = allocBuf(frameNo);
+        if (allocStatus == BUFFEREXCEEDED) {
+            return BUFFEREXCEEDED;
+        }
         BufDesc *frame = &bufTable[frameNo];
-        Status readPageStatus = file->readPage(PageNo, *(file + PageNo));
+        Status readPageStatus = file->readPage(PageNo, &(file + PageNo));
         if (readPageStatus == UNIXERR) {
             return UNIXERR;
         }
@@ -132,12 +136,10 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
         if (hashTableStatus == HASHTBLERROR) {
             return HASHTBLERROR;
         }
-        Status setStatus = frame->Set(file, PageNo);
-        if (setStatus == BUFFEREXCEEDED) {
-            return BUFFEREXCEEDED;
-        }
-        return frame;
+        frame->Set(file, PageNo);
+        page = &frame;
     }
+    return OK;
 }
 
 
@@ -160,18 +162,20 @@ const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page)
     }
     file->allocatePage(pageNo);
     int tempframe;
-    const Status status = allocBuf(tempframe);
-    if (status != Status::OK) {
+    const Status status1 = allocBuf(tempframe);
+    if (status1 != Status::OK) {
         return BUFFEREXCEEDED;  // Return on failure
     }
     allocBuf(tempframe); 
-    const Status status =  hashTable->insert(file, pageNo, tempframe); 
-    if (status != Status::OK) {
+    const Status status2 =  hashTable->insert(file, pageNo, tempframe); 
+    if (status2 != Status::OK) {
         return HASHTBLERROR;  // Return on failure
     }
     hashTable->insert(file, pageNo, tempframe);
     
     bufTable->Set(file, pageNo); 
+
+    return OK;
     
 }
 
