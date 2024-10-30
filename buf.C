@@ -66,8 +66,46 @@ BufMgr::~BufMgr() {
 const Status BufMgr::allocBuf(int & frame) 
 {
     
+    bool set = false;
+    int firstFrame = clockHand;
+    while(set == false){
+        advanceClock(); //Advance clock pointer
+        BufDesc *frame = &bufTable[clockHand];
+        if(frame->valid == true){ //Valid set? yes
+            if(frame->refbit == true){//refBit set? yes
+                frame->refbit = false; //Is this right way to change the var?
+                continue
+            }
+            else{//refBit set? no
+                if(frame->pinCnt == 0){//page pinned? no
+                    if(frame->dirty == true){//dirty bit set? yes
+                        frame->file->writePage();
+                    }
+                    else{//dirty bit set? no
+                        Status status = frame->Set(frame->file, frame->pageNo);
+                        if(status != OK){
+                            return UNIXERR;
+                        }
+                        set = true;
+                    }
+                }
+                else{//page pinned? yes
+                    if(clockhand == firstFrame){
+                        return BUFFEREXCEEDED;
+                    }
+                    continue
+                } 
 
+            }
+        }
+        else{ //Valid set? no
+            //invoke set() on frame
+            frame->Set(frame->file, frame->pageNo);
+            set = true;
+        }
+    }
 
+    return OK;
 
 
 }
@@ -115,46 +153,26 @@ const Status BufMgr::unPinPage(File* file, const int PageNo,
 
 const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page) 
 {
-    bool set = false;
-    int firstFrame = clockHand;
-    while(set == false){
-        advanceClock(); //Advance clock pointer
-        BufDesc *frame = &bufTable[clockHand];
-        if(frame->valid == true){ //Valid set? yes
-            if(frame->refbit == true){//refBit set? yes
-                frame->refbit = false; //Is this right way to change the var?
-                continue
-            }
-            else{//refBit set? no
-                if(frame->pinCnt == 0){//page pinned? no
-                    if(frame->dirty == true){//dirty bit set? yes
-                        frame->file->writePage();
-                    }
-                    else{//dirty bit set? no
-                        Status status = frame->Set(frame->file, frame->pageNo);
-                        if(status != OK){
-                            return UNIXERR;
-                        }
-                        set = true;
-                    }
-                }
-                else{//page pinned? yes
-                    if(clockhand == firstFrame){
-                        return BUFFEREXCEEDED;
-                    }
-                    continue
-                } 
 
-            }
-        }
-        else{ //Valid set? no
-            //invoke set() on frame
-            frame->Set(frame->file, frame->pageNo);
-            set = true;
-        }
+    const Status status = file->allocatePage(pageNo);
+    if (status != Status::OK) {
+        return UNIXERR;  // Return on failure
     }
-
-    return OK;
+    file->allocatePage(pageNo);
+    int tempframe;
+    const Status status = allocBuf(tempframe);
+    if (status != Status::OK) {
+        return BUFFEREXCEEDED;  // Return on failure
+    }
+    allocBuf(tempframe); 
+    const Status status =  hashTable->insert(file, pageNo, tempframe); 
+    if (status != Status::OK) {
+        return HASHTBLERROR;  // Return on failure
+    }
+    hashTable->insert(file, pageNo, tempframe);
+    
+    bufTable->Set(file, pageNo); 
+    
 }
 
 const Status BufMgr::disposePage(File* file, const int pageNo) 
