@@ -97,13 +97,23 @@ const Status BufMgr::unPinPage(File* file, const int PageNo,
 const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page) 
 {
 
-    file->allocatePage(pageNo); 
+    const Status status = file->allocatePage(pageNo);
+    if (status != Status::OK) {
+        return UNIXERR;  // Return on failure
+    }
+    file->allocatePage(pageNo);
     int tempframe;
     const Status status = allocBuf(tempframe);
     if (status != Status::OK) {
         return BUFFEREXCEEDED;  // Return on failure
     }
-    hashTable->insert(file, pageNo, tempframe); 
+    allocBuf(tempframe); 
+    const Status status =  hashTable->insert(file, pageNo, tempframe); 
+    if (status != Status::OK) {
+        return HASHTBLERROR;  // Return on failure
+    }
+    hashTable->insert(file, pageNo, tempframe);
+    
     bufTable->Set(file, pageNo); 
 
 }
