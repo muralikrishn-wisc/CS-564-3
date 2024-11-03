@@ -67,26 +67,33 @@ const Status BufMgr::allocBuf(int & frame)
 {
     
     bool set = false;
-    int firstFrame = clockHand;
+    unsigned int firstFrame = clockHand;
+    int frameNumber = clockHand;
     while(set == false){
         advanceClock(); //Advance clock pointer
-        BufDesc *frame = &bufTable[clockHand];
-        if(frame->valid == true){ //Valid set? yes
-            if(frame->refbit == true){//refBit set? yes
-                frame->refbit = false; //Is this right way to change the var?
+        BufDesc *potentialFrame = &bufTable[clockHand];
+        if(potentialFrame->valid == true){ //Valid set? yes
+            if(potentialFrame->refbit == true){//refBit set? yes
+                potentialFrame->refbit = false; //Is this right way to change the var?
                 continue;
             }
             else{//refBit set? no
-                if(frame->pinCnt == 0){//page pinned? no
-                    if(frame->dirty == true){//dirty bit set? yes
-                        Status status = frame->file->writePage(frame->pageNo, hashTable->lookup(frame->file, frame->pageNo, frame->frameNo));
+                if(potentialFrame->pinCnt == 0){//page pinned? no
+                    if(potentialFrame->dirty == true){//dirty bit set? yes
+                        //How to get exact page from a file?
+                        Status status = potentialFrame->file->writePage(potentialFrame->pageNo, &(bufPool[potentialFrame->frameNo]));
                         if(status != OK){
-                            return UNIXERR;
+                            return status;
+                        }
+                        status = hashTable->remove(potentialFrame->file, potentialFrame->pageNo);
+                        if(status != OK){
+                            return status;
                         }
                     }
                     else{//dirty bit set? no
-                        frame->Set(frame->file, frame->pageNo);
+                        potentialFrame->Set(potentialFrame->file, potentialFrame->pageNo);
                         set = true;
+                        frameNumber = potentialFrame->frameNo;
                     }
                 }
                 else{//page pinned? yes
@@ -100,13 +107,14 @@ const Status BufMgr::allocBuf(int & frame)
         }
         else{ //Valid set? no
             //invoke set() on frame
-            frame->Set(frame->file, frame->pageNo);
+            potentialFrame->Set(potentialFrame->file, potentialFrame->pageNo);
             set = true;
+            frameNumber = potentialFrame->frameNo;
         }
     }
 
+    frame = frameNumber;
     return OK;
-
 
 }
 
