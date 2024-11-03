@@ -125,10 +125,10 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
     Status status = hashTable->lookup(file, PageNo, frameNo);
 
     if (status == OK) {
-        BufDesc *frame = &bufTable[frameNo];
+        BufDesc *frame = &(bufTable[frameNo]);
         frame->refbit = true;
         frame->pinCnt += 1;
-        page = frame;
+        page = &(bufPool[frameNo]);
     } else {
         int frameNo = 0;
         Status allocStatus = allocBuf(frameNo);
@@ -136,7 +136,7 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
             return BUFFEREXCEEDED;
         }
         BufDesc *frame = &bufTable[frameNo];
-        Status readPageStatus = file->readPage(PageNo, &(file + PageNo));
+        Status readPageStatus = file->readPage(PageNo, &(bufPool[frameNo]));
         if (readPageStatus == UNIXERR) {
             return UNIXERR;
         }
@@ -145,7 +145,7 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
             return HASHTBLERROR;
         }
         frame->Set(file, PageNo);
-        page = &frame;
+        page = &(bufPool[frameNo]);
     }
     return OK;
 }
@@ -155,7 +155,21 @@ const Status BufMgr::unPinPage(File* file, const int PageNo,
 			       const bool dirty) 
 {
 
+   int frameNo;
+   Status status = hashTable->lookup(file, PageNo, frameNo);
+   if (status == HASHNOTFOUND) {
+       return HASHNOTFOUND;
+   }
+   BufDesc *frame = &bufTable[frameNo];
+   if (frame->pinCnt == 0) return PAGENOTPINNED;
+   frame->pinCnt -= 1;
+   if (dirty == true) {
+       frame->dirty = true;
+   } else {
+       frame->dirty = false;
+   }
 
+   return OK;
 
 
 
