@@ -179,22 +179,23 @@ const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page)
 {
 
     const Status status = file->allocatePage(pageNo);
+    
     if (status != Status::OK) {
         return UNIXERR;  // Return on failure
     }
-    file->allocatePage(pageNo);
+   // file->allocatePage(pageNo);
     int tempframe;
     const Status status1 = allocBuf(tempframe);
     if (status1 != Status::OK) {
         return BUFFEREXCEEDED;  // Return on failure
     }
-    allocBuf(tempframe); 
+    //allocBuf(tempframe); 
     const Status status2 =  hashTable->insert(file, pageNo, tempframe); 
     if (status2 != Status::OK) {
         return HASHTBLERROR;  // Return on failure
     }
-    hashTable->insert(file, pageNo, tempframe);
-    
+    //hashTable->insert(file, pageNo, tempframe);
+    page = &(bufPool[tempframe]);
     bufTable->Set(file, pageNo); 
 
     return OK;
