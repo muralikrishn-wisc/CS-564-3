@@ -124,6 +124,7 @@ int main()
       sprintf((char*)page3, "test.3 Page %d %7.1f", pageno3, (float)pageno3);
       pageno = j[random() % num];
       CALL(bufMgr->readPage(file1, pageno, page));
+     // cout << page << "----" << &cmp << endl;
       sprintf((char*)&cmp, "test.1 Page %d %7.1f", pageno, (float)pageno);
       ASSERT(memcmp(page, &cmp, strlen((char*)&cmp)) == 0);
       cout << (char*)page << endl;
