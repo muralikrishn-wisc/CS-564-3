@@ -116,42 +116,66 @@ const Status BufMgr::allocBuf(int & frame)
     return BUFFEREXCEEDED;
 }
 
-    
+/**
+ * Read page in buffer pool and output a pointer to its data.
+ * If the page is not in the buffer pool currently, load page from disk
+ * into buffer and output a pointer to its data.
+ * 
+ * Input
+ * file - file pointer containing page to read
+ * PageNo - page number within file of page to read
+ * 
+ * Output
+ * page - output pointer to the desired page 
+ * 
+ * return OK on success, and either UNIXERR, BUFFEREXCEEDED, or HASHTBLERROR on error.
+*/
 const Status BufMgr::readPage(File* file, const int PageNo, Page*& page)
 {
     int frameNo = -999;
-    Status status = hashTable->lookup(file, PageNo, frameNo);
+    Status status = hashTable->lookup(file, PageNo, frameNo); // check if page in buffer
 
-    if (status == OK) {
+    if (status == OK) { // page in buffer?
+        // mark frame as having been referenced recently
         BufDesc *frame = &bufTable[frameNo];
         frame->refbit = true;
         frame->pinCnt += 1;
-        page = &bufPool[frameNo];
-    } else {
-        int frameNo = -999;
-        Status allocStatus = allocBuf(frameNo);
-        if (allocStatus != OK) return allocStatus;
+        page = &bufPool[frameNo]; // output pointer to page
+    } else { // page not in buffer?
+        int frameNo = -99999;
+        Status allocStatus = allocBuf(frameNo); // allocate frame in buffer to store page
+        if (allocStatus != OK) return allocStatus; // return UNIXERR if something went wrong
         BufDesc *frame = &bufTable[frameNo];
-        Status readPageStatus = file->readPage(PageNo, &(bufPool[frameNo]));
-        if (readPageStatus != OK) return readPageStatus;
-        Status hashTableStatus = hashTable->insert(file, PageNo, frameNo);
-        if (hashTableStatus != OK) return hashTableStatus;
-        frame->Set(file, PageNo);
-        page = &(bufPool[frameNo]);
+        Status readPageStatus = file->readPage(PageNo, &(bufPool[frameNo])); // read page from disk and insert into frame
+        if (readPageStatus != OK) return readPageStatus; // return BUFFEREXCEEDED if all pages pinned
+        Status hashTableStatus = hashTable->insert(file, PageNo, frameNo); // insert entry into hashtable
+        if (hashTableStatus != OK) return hashTableStatus; // return HASHTABLEERROR if something went wrong
+        frame->Set(file, PageNo); // set frame with new page
+        page = &(bufPool[frameNo]); // output pointer to page
     }
     return OK;
 }
 
-
+/**
+ * Unpins a desired page. 
+ * If page is dirty, mark the frame as such, then unpin it.
+ * 
+ * Input
+ * file - file pointer containing page to unpin
+ * PageNo - page number within file of page to unpin
+ * dirty - if page to unpin is dirty
+ * 
+ * return OK on success, and either HASHNOTFOUND or PAGENOTPINNED on error.
+*/
 const Status BufMgr::unPinPage(File* file, const int PageNo, 
                    const bool dirty) 
 {
    int frameNo = -999999;
-   Status status = hashTable->lookup(file, PageNo, frameNo);
-   if (status != OK) {return status;}
-   if (bufTable[frameNo].pinCnt == 0) {return PAGENOTPINNED;}
-   if (dirty) {bufTable[frameNo].dirty = true;}
-   bufTable[frameNo].pinCnt = bufTable[frameNo].pinCnt - 1;
+   Status status = hashTable->lookup(file, PageNo, frameNo); // is the page in the buffer?
+   if (status != OK) {return status;} // if not, return HASHNOTFOUND
+   if (bufTable[frameNo].pinCnt == 0) {return PAGENOTPINNED;} // page to unpin is not pinned. return PAGENOTPINNED
+   if (dirty) {bufTable[frameNo].dirty = true;} // if page is dirty, mark it as such
+   bufTable[frameNo].pinCnt = bufTable[frameNo].pinCnt - 1; // decrement the pincount
 
    return OK;
 }
@@ -250,3 +274,4 @@ void BufMgr::printSelf(void)
         cout << endl;
     };
 }
+
