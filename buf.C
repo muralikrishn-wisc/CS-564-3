@@ -116,7 +116,6 @@ const Status BufMgr::allocBuf(int & frame)
     return BUFFEREXCEEDED;
 }
 
-
 /**
  * Read page in buffer pool and output a pointer to its data.
  * If the page is not in the buffer pool currently, load page from disk
@@ -275,3 +274,4 @@ void BufMgr::printSelf(void)
         cout << endl;
     };
 }
+
