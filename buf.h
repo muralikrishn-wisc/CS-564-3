@@ -1,3 +1,11 @@
+/**
+* Thomas Smegal, student ID: 9083224718
+* Arjun Muralikrishnan, student ID: 9082992190
+* Omkar Kendale, student ID: 9084295774
+*
+* This header defines the interface for managing a buffer pool in memory. It includes data structures for pages and the buffer 
+* pool, as well as functions for pinning, unpinning, flushing, and evicting pages.
+*/
 #ifndef BUF_H
 #define BUF_H
 
