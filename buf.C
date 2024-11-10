@@ -62,35 +62,43 @@ BufMgr::~BufMgr() {
     delete [] bufPool;
 }
 
-
+/*
+* This function implements the clock algorithmt to allocate a free frame in the buffer. 
+* Input: None
+* Outputs:
+* Status: Returns a Status object. The Status is BUFFEREXCEEDED if all buffer frames are pinned. The Status
+* is UNIXERR if an error occurred when writing a dirty page to disk. 
+* int & frame: After the function is executed, the address passed into this parameter will hold the integer
+* representing the frame number this function has allocated. 
+* 
+*/
 const Status BufMgr::allocBuf(int & frame) 
 {
-    for (int i = 0; i < numBufs * 2; i++){
-        advanceClock(); //Advance clock pointer
-        BufDesc *potentialFrame = &bufTable[clockHand];
+    //Iterate over the buffer pool twice to find possible frames to allocate
+    for (int i = 0; i < numBufs * 2; i++){ 
+        advanceClock(); 
+        BufDesc *potentialFrame = &bufTable[clockHand]; //Current frame we are considering allocating
         if(potentialFrame->valid == true){ //Valid set? yes
             if(potentialFrame->refbit == true){//refBit set? yes
-                potentialFrame->refbit = false; //Is this right way to change the var?
-                continue;
+                potentialFrame->refbit = false; 
+                continue; //Continue to the next buffer
             }
             else{//refBit set? no
                 if(potentialFrame->pinCnt <= 0){//page pinned? no
                     if(potentialFrame->dirty == true){//dirty bit set? yes
-                        //How to get exact page from a file?
+                        //Write dirty page back to disk 
                         Status status = potentialFrame->file->writePage(potentialFrame->pageNo, &(bufPool[clockHand]));
                         if(status != OK){
                             return status;
                         }
                         potentialFrame->dirty = false;
                     }
-
+                    //Prepare frame for allocation and remove evicted pages from hashtable
                     potentialFrame->Set(potentialFrame->file, potentialFrame->pageNo);
-
                     Status remStatus = hashTable->remove(potentialFrame->file, potentialFrame->pageNo);
                     if(remStatus != OK){
                         return remStatus;
                     }
-
                     potentialFrame->Clear();
 
                     frame = clockHand;
@@ -98,21 +106,19 @@ const Status BufMgr::allocBuf(int & frame)
 
                 }
                 else{//page pinned? yes
-                    // if(clockHand == firstFrame){
-                    //     return BUFFEREXCEEDED;
-                    // }
-                    continue;
+                    continue; //Continue to next buffer frame
                 } 
             }
         }
         else{ //Valid set? no
-            //invoke set() on frame
+            //Prepare frame for allocation
             potentialFrame->Set(potentialFrame->file, potentialFrame->pageNo);
             frame = clockHand;
             return OK;
         }
     }
 
+    //If we have iterated over every buffer twice and have ont found a frame to allocate, then every page is pinned
     return BUFFEREXCEEDED;
 }
 

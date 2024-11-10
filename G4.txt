@@ -1,0 +1,6 @@
+Group names and emails:
+Omkar Kendale, kendale@wisc.edu
+Arjun Muralikrishnan, muralikrishn@wisc.edu
+Thomas Smegal, tsmegal@wisc.edu
+
+In this project stage, we split up the work evenly. Omkar worked on implementing the allocBuf function, Tommy worked on implementing the allocPage method, and Arjun worked on the readPage method. We all worked together to implement the unPinPage method. For debugging, we met a couple times to figure out where our issues were. Everyone suggested possible ideas and things to test. Overall, everyone contributed equally to this project stage.
