@@ -1,3 +1,11 @@
+/**
+* Thomas Smegal, student ID: 9083224718
+* Arjun Muralikrishnan, student ID: 9082992190
+* Omkar Kendale, student ID: 9084295774
+*
+* This contains the hashtable for the buffer manager to keep track
+* of all files and pages and be able to manage the buffer
+*/
 #include <memory.h>
 #include <unistd.h>
 #include <errno.h>
@@ -8,7 +16,7 @@
 #include "page.h"
 #include "buf.h"
 
-// buffer pool hash table implementation
+// buffer pool hash table implementation 
 
 int BufHashTbl::hash(const File* file, const int pageNo)
 {
