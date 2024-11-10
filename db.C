@@ -1,3 +1,10 @@
+/**
+* Thomas Smegal, student ID: 9083224718
+* Arjun Muralikrishnan, student ID: 9082992190
+* Omkar Kendale, student ID: 9084295774
+*
+* This is the implimentation of DB and file and is used to handle the database operations
+*/
 #include <memory.h>
 #include <unistd.h>
 #include <errno.h>
