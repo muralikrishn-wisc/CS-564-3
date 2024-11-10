@@ -1,3 +1,10 @@
+/**
+* Thomas Smegal, student ID: 9083224718
+* Arjun Muralikrishnan, student ID: 9082992190
+* Omkar Kendale, student ID: 9084295774
+*
+* This contains all of the tests to see if our code was working correctly or not. 
+*/
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>

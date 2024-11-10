@@ -1,3 +1,12 @@
+/**
+* Thomas Smegal, student ID: 9083224718
+* Arjun Muralikrishnan, student ID: 9082992190
+* Omkar Kendale, student ID: 9084295774
+*
+*
+* This is the implementation of the page class and contains all of the methods 
+* that are used with the page object
+*/
 #include <sys/types.h>
 #include <functional>
 #include <string>

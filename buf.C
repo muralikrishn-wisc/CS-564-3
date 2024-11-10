@@ -1,3 +1,13 @@
+/**
+* Thomas Smegal, student ID: 9083224718
+* Arjun Muralikrishnan, student ID: 9082992190
+* Omkar Kendale, student ID: 9084295774
+* This file is responsible for managing the buffer pool, handling page requests, and ensuring that pages are loaded and evicted 
+* efficiently. The buffer manager interacts with the disk and manages memory allocation for cached pages.
+*
+*
+*/
+
 #include <memory.h>
 #include <unistd.h>
 #include <errno.h>
@@ -185,27 +195,36 @@ const Status BufMgr::unPinPage(File* file, const int PageNo,
 
    return OK;
 }
-
+/**
+ * Allocates a new page in a file and updates the page number and page pointer
+ * Input
+ * file - file pointer containing the page that will be allocated
+ * 
+ * Output: 
+ * pageNo - stores the page number of the allocated page
+ * page - a reference to the page pointer of the newly allocated page
+ * return OK on success, and either UNIXERR, BUFFEREXCEEDED, or HASHTBLERROR on error.
+*/
 const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page) 
 {
-    const Status status = file->allocatePage(pageNo);
+    const Status status = file->allocatePage(pageNo);//allocates the empty page
     
     if (status != Status::OK) {
         return UNIXERR;  // Return on failure
     }
     int tempframe = -999999;
-    const Status status1 = allocBuf(tempframe);
+    const Status status1 = allocBuf(tempframe);//gets the buffer pool frame
     if (status1 != Status::OK) {
         if (status1 == BUFFEREXCEEDED) return BUFFEREXCEEDED;
         else if (status1 == UNIXERR) return UNIXERR;  // Return on failure
         return status1;
     }
-    const Status status2 =  hashTable->insert(file, pageNo, tempframe); 
+    const Status status2 =  hashTable->insert(file, pageNo, tempframe); //inserts into the hashtable
     if (status2 != Status::OK) {
         return HASHTBLERROR;  // Return on failure
     }
-    bufTable[tempframe].Set(file, pageNo); 
-    page = &(bufPool[tempframe]);
+    bufTable[tempframe].Set(file, pageNo); //sets it up
+    page = &(bufPool[tempframe]);//page is updated
 
     return OK;
 }

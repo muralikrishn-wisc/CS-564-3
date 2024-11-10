@@ -1,3 +1,10 @@
+/**
+* Thomas Smegal, student ID: 9083224718
+* Arjun Muralikrishnan, student ID: 9082992190
+* Omkar Kendale, student ID: 9084295774
+*
+* This is defines the page class. 
+*/
 #ifndef PAGE_H
 #define PAGE_H
 
