@@ -1,4 +1,10 @@
-
+/**
+* Thomas Smegal, student ID: 9083224718
+* Arjun Muralikrishnan, student ID: 9082992190
+* Omkar Kendale, student ID: 9084295774
+*
+* This is defines the error class and the error codes
+*/
 #ifndef ERROR_H
 #define ERROR_H
 
