@@ -1,3 +1,10 @@
+/**
+* Thomas Smegal, student ID: 9083224718
+* Arjun Muralikrishnan, student ID: 9082992190
+* Omkar Kendale, student ID: 9084295774
+*
+* This file helps compile and run the project
+*/
 #
 # Makefile for the test programs
 #
